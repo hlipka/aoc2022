@@ -64,4 +64,17 @@ public class AocParseUtils
         List<String> lines = FileUtils.readLines(new File("data/" + dayName + ".txt"), StandardCharsets.UTF_8);
         return lines.stream().filter(StringUtils::isNotBlank).map(l->Arrays.asList(StringUtils.split(l, " "))).collect(Collectors.toList());
     }
+
+    public static List<String> getLines(final String dayName) throws IOException
+    {
+        return FileUtils.readLines(new File("data/" + dayName + ".txt"), StandardCharsets.UTF_8).stream().filter(StringUtils::isNotBlank).collect(Collectors.toList());
+    }
+
+    public static List<List<String>> getLinesAsChars(final String dayName) throws IOException
+    {
+        return FileUtils.readLines(new File("data/" + dayName + ".txt"), StandardCharsets.UTF_8).stream()
+                .filter(StringUtils::isNotBlank)
+                .map(l->l.chars().mapToObj(c->String.valueOf((char)c)).collect(Collectors.toList()))
+                .collect(Collectors.toList());
+    }
 }
