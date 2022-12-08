@@ -77,4 +77,12 @@ public class AocParseUtils
                 .map(l->l.chars().mapToObj(c->String.valueOf((char)c)).collect(Collectors.toList()))
                 .collect(Collectors.toList());
     }
+
+    public static List<List<Integer>> getLinesAsDigits(final String dayName) throws IOException
+    {
+        return FileUtils.readLines(new File("data/" + dayName + ".txt"), StandardCharsets.UTF_8).stream()
+                .filter(StringUtils::isNotBlank)
+                .map(l->l.chars().mapToObj(c->c-'0').collect(Collectors.toList()))
+                .collect(Collectors.toList());
+    }
 }
