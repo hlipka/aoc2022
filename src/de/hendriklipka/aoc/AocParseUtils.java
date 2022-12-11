@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -84,5 +86,44 @@ public class AocParseUtils
                 .filter(StringUtils::isNotBlank)
                 .map(l->l.chars().mapToObj(c->c-'0').collect(Collectors.toList()))
                 .collect(Collectors.toList());
+    }
+
+    public static List<String> parsePartsFromString(String str, String pattern)
+    {
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(str);
+        if (!m.matches())
+        {
+            throw new IllegalArgumentException("No match found for '"+pattern+"' in ["+str+"]");
+        }
+        final int count = m.groupCount();
+        List<String> result = new ArrayList<>(count);
+        for (int i=0;i<count; i++)
+        {
+            result.add(m.group(i+1));
+        }
+        return result;
+    }
+
+    public static String parseStringFromString(String str, String pattern)
+    {
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(str);
+        if (!m.matches())
+        {
+            throw new IllegalArgumentException("No match found for '" + pattern + "' in [" + str + "]");
+        }
+        return m.group(1);
+    }
+
+    public static int parseIntFromString(String str, String pattern)
+    {
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(str);
+        if (!m.matches())
+        {
+            throw new IllegalArgumentException("No match found for '" + pattern + "' in [" + str + "]");
+        }
+        return Integer.parseInt(m.group(1));
     }
 }
