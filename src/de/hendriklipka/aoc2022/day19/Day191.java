@@ -1,0 +1,260 @@
+package de.hendriklipka.aoc2022.day19;
+
+import de.hendriklipka.aoc.AocParseUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * User: hli
+ * Date: 19.12.22
+ * Time: 07:41
+ */
+public class Day191
+{
+    private static long count=0;
+    final static int ROUNDS = 24;
+    private static int bestGeodes;
+
+    public static void main(String[] args)
+    {
+        try
+        {
+            List<BluePrint> blueprints = AocParseUtils.getLines("day19")
+                                                      .stream()
+                                                      .map(Day191::getBluePrint)
+                                                      .collect(Collectors.toList());
+            int result = 0;
+            for (BluePrint bp : blueprints)
+            {
+                System.out.println(bp);
+                SimState state = simulate(bp);
+                System.out.println(state);
+                System.out.println("-------------");
+                result += bp.num * state.geodes;
+            }
+            System.out.println(result);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static SimState simulate(BluePrint bp)
+    {
+        SimState state = new SimState();
+        bestGeodes=-1;
+        return doSimulate(bp, state, 0);
+    }
+
+    private static SimState doSimulate(BluePrint bp, SimState state, int tick)
+    {
+        if (tick>=ROUNDS)
+        {
+            return state;
+        }
+        // check how many geodes we could find when we build a new robot each step
+        // when this is less than the current best, stop here
+        int timeLeft=ROUNDS-tick;
+        int maxGeodesToBeFound=state.geodes+timeLeft*(state.geodeRobots*2+timeLeft);
+        if (maxGeodesToBeFound<=bestGeodes)
+        {
+            return state;
+        }
+        count++;
+        if (0==(count%10000000))
+        {
+            System.out.println(count);
+            System.out.println(tick);
+            System.out.println(state);
+        }
+        // first we get the earnings from the last tick, and only then the new robot will be finished
+        state.ore += state.oreRobots;
+        state.clay += state.clayRobots;
+        state.obs += state.obsRobots;
+        state.geodes += state.geodeRobots;
+
+        switch (state.build)
+        {
+            case -1: break;
+            case 1: state.oreRobots++; break;
+            case 2: state.clayRobots++; break;
+            case 3: state.obsRobots++; break;
+            case 4: state.geodeRobots++; break;
+        }
+        state.build=-1; // stop building anything
+        // when we can build a robot, simulate what happens when we do so
+        // we bound the number of robots for each resource to the max resource we need to build another robot to avoid getting a surplus
+        List<SimState> states = new ArrayList<>(6);
+        // the order here is to maximize building the geode robots, so hopefully we can exit early some branches
+        if (state.ore >= bp.oreForGeode && state.obs>=bp.obsForGeode)
+        {
+            SimState nextState = new SimState(state);
+            nextState.build = 4;
+            nextState.ore -= bp.oreForGeode;
+            nextState.obs -= bp.obsForGeode;
+            states.add(doSimulate(bp, nextState, tick+1));
+        }
+        if (state.ore >= bp.oreForObs && state.clay>=bp.clayForObs && state.obsRobots<bp.getMaxObs())
+        {
+            SimState nextState = new SimState(state);
+            nextState.build = 3;
+            nextState.ore -= bp.oreForObs;
+            nextState.clay -= bp.clayForObs;
+            states.add(doSimulate(bp, nextState, tick+1));
+        }
+        if (state.ore >= bp.oreForClay && state.clayRobots<bp.getMaxClay())
+        {
+            SimState nextState = new SimState(state);
+            nextState.build = 2;
+            nextState.ore -= bp.oreForClay;
+            states.add(doSimulate(bp, nextState, tick+1));
+        }
+        // and also simulate what happens when we don't build a robot
+        states.add(doSimulate(bp, new SimState(state), tick+1));
+        if (state.ore >= bp.oreForOre && state.oreRobots<bp.getMaxOre())
+        {
+            SimState nextState=new SimState(state);
+            nextState.build=1;
+            nextState.ore-=bp.oreForOre;
+            states.add(doSimulate(bp, nextState, tick+1));
+        }
+
+        int maxG=-1;
+        SimState bestState=null;
+        for (SimState st: states)
+        {
+            if (st.geodes>maxG)
+            {
+                maxG=st.geodes;
+                bestState=st;
+            }
+        }
+        if (maxG>bestGeodes)
+        {
+            bestGeodes = maxG;
+        }
+        return bestState;
+    }
+
+    private static BluePrint getBluePrint(String s)
+    {
+        List<String> parts = AocParseUtils.parsePartsFromString(s,
+                "Blueprint (\\d+): Each ore robot costs (\\d+) ore. Each clay robot costs (\\d+) ore. Each obsidian robot costs (\\d+) ore and (\\d+) clay. Each geode robot costs (\\d+) ore and (\\d+) obsidian.");
+        return new BluePrint(Integer.parseInt(parts.get(0)), Integer.parseInt(parts.get(1)),
+                Integer.parseInt(parts.get(2)),
+                Integer.parseInt(parts.get(3)), Integer.parseInt(parts.get(4)), Integer.parseInt(parts.get(5)),
+                Integer.parseInt(parts.get(6)));
+    }
+
+
+    private static class SimState
+    {
+        public SimState(SimState other)
+        {
+            clay=other.clay;
+            ore=other.ore;
+            obs=other.obs;
+            clayRobots=other.clayRobots;
+            oreRobots=other.oreRobots;
+            obsRobots=other.obsRobots;
+            geodeRobots=other.geodeRobots;
+            geodes=other.geodes;
+            build=other.build;
+        }
+
+        private int clay = 0;
+        private int ore = 0;
+        private int obs = 0;
+        private int clayRobots = 0;
+        private int oreRobots = 1;
+        private int obsRobots = 0;
+        private int geodeRobots = 0;
+        private int geodes = 0;
+        private int build=-1;
+
+        public SimState()
+        {
+
+        }
+
+        @Override
+        public String toString()
+        {
+            return "SimState{" +
+                    "build=" + build +
+                    ", ore=" + ore +
+                    ", clay=" + clay +
+                    ", obs=" + obs +
+                    ", oreRobots=" + oreRobots +
+                    ", clayRobots=" + clayRobots +
+                    ", obsRobots=" + obsRobots +
+                    ", geodeRobots=" + geodeRobots +
+                    ", geodes=" + geodes +
+                    '}';
+        }
+    }
+    private static class BluePrint
+    {
+        private final int num;
+        private final int oreForOre;
+        private final int oreForClay;
+        private final int oreForObs;
+        private final int clayForObs;
+        private final int oreForGeode;
+        private final int obsForGeode;
+
+        private final int maxOre;
+        private final int maxClay;
+        private final int maxObs;
+
+        public BluePrint(int num, int oreForOre, int oreForClay, int oreForObs, int clayForObs, int oreForGeode, int obsForGeode)
+        {
+            this.num = num;
+            this.oreForOre = oreForOre;
+            this.oreForClay = oreForClay;
+            this.oreForObs = oreForObs;
+            this.clayForObs = clayForObs;
+            this.oreForGeode = oreForGeode;
+            this.obsForGeode = obsForGeode;
+            maxOre=Math.max(oreForOre, Math.max(oreForClay, oreForObs));
+            maxClay=clayForObs;
+            maxObs=obsForGeode;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "BluePrint{" +
+                    "num=" + num +
+                    ", oreForOre=" + oreForOre +
+                    ", oreForClay=" + oreForClay +
+                    ", oreForObs=" + oreForObs +
+                    ", clayForObs=" + clayForObs +
+                    ", oreForGeode=" + oreForGeode +
+                    ", obsForGeode=" + obsForGeode +
+                    ", maxOre=" + maxOre +
+                    ", maxClay=" + maxClay +
+                    ", maxObs=" + maxObs +
+                    '}';
+        }
+
+        public int getMaxOre()
+        {
+            return maxOre;
+        }
+
+        public int getMaxClay()
+        {
+            return maxClay;
+        }
+
+        public int getMaxObs()
+        {
+            return maxObs;
+        }
+    }
+}
