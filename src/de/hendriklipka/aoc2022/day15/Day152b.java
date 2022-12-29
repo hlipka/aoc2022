@@ -3,17 +3,15 @@ package de.hendriklipka.aoc2022.day15;
 import de.hendriklipka.aoc.AocParseUtils;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-  brute-force all Y coordinates in the search space
-  might profit from multiple threads
-  another faster version: for each row, handle ranges of potential places, and just change the ranges for each scanner
-  when the ranges are empty afterwards there is no distress signal
+ * use a BitSet instead of a boolean array, while still brute-forcing the solution.
+ * This is about 15 times faster than the 'boolean array' version
  */
-public class Day152
+public class Day152b
 {
     private static final int MAX_COORD = 4000000;
 
@@ -23,39 +21,46 @@ public class Day152
         {
             List<Scanner> scanners = AocParseUtils.getLines("day15")
                                                   .stream()
-                                                  .map(Day152::parseScanner)
+                                                  .map(Day152b::parseScanner)
                                                   .collect(Collectors.toList());
             int beaconX = -1;
             int beaconY = -1;
             // brute-force all Y coordinates in the search space
-            long start = System.currentTimeMillis();
-            boolean[] testRow = new boolean[MAX_COORD + 1];
+            // might profit from multiple threads
+            // another faster version: for each row, handle ranges of potential places, and just change the ranges for each scanner
+            // when the ranges are empty afterwards there is no distress signal
+            long start=System.currentTimeMillis();
+            BitSet testRow = new BitSet(MAX_COORD+1);
             for (int rowNum = 0; rowNum <= MAX_COORD; rowNum++)
             {
+                testRow.clear();
                 if (0==(rowNum%1000))
                 {
                     System.out.println(rowNum);
                 }
                 setKnownLocations(testRow, scanners, rowNum);
-                for (int i = 0; i <= MAX_COORD; i++)
+                int clearBit=testRow.nextClearBit(0);
+                if (MAX_COORD+1 > clearBit)
                 {
-                    boolean b = testRow[i];
-                    if (b)
-                    {
-                        beaconY = rowNum;
-                        beaconX = i;
-                        break;
-                    }
-                }
-                if (-1 != beaconY)
-                {
+                    beaconY = rowNum;
+                    beaconX = clearBit;
                     break;
                 }
             }
             System.out.println(beaconX);
             System.out.println(beaconY);
-            System.out.println((long)beaconX* 4000000L+(long)beaconY);
-            System.out.println("time needed: " + (System.currentTimeMillis() - start)/1000 + "s");
+            final long result = (long) beaconX * 4000000L + (long) beaconY;
+            System.out.println(result);
+            // results must be X=3257428, Y=2573243
+            if (result == 13029714573243L)
+            {
+                System.out.println("OK");
+            }
+            else
+            {
+                System.out.println("Wrong");
+            }
+            System.out.println("time needed: "+(System.currentTimeMillis()-start)/1000+"s");
         }
         catch (IOException e)
         {
@@ -63,35 +68,28 @@ public class Day152
         }
     }
 
-    private static void setKnownLocations(boolean[] testRow, List<Scanner> scanners, final int line)
+    private static void setKnownLocations(BitSet testRow, List<Scanner> scanners, final int line)
     {
-        Arrays.fill(testRow, true); // set row having the distress beacon, potentially
+        // fill all the covered locations
         for (Scanner scanner : scanners)
         {
-            // and now fill all the covered locations
-            // exit early when we know we filled everything
-            if (setBeacon(scanner, testRow, line))
-            {
-                break;
-            }
+            setBeacon(scanner, testRow, line);
         }
     }
 
-    private static boolean setBeacon(Scanner scanner, boolean[] row, int line)
+    private static void setBeacon(Scanner scanner, BitSet row, int line)
     {
         // when the scanner is too far away, ignore it
         final int rowDist = Math.abs(line - scanner.getY());
         if (rowDist > scanner.getDistance())
         {
-            return false;
+            return;
         }
         int remDist = scanner.getDistance() - rowDist;
         // limit to search space
         final int xFrom = Math.max(scanner.getX() - remDist, 0);
         final int xTo = Math.min(scanner.getX() + remDist, MAX_COORD);
-        Arrays.fill(row, xFrom, xTo+1, false);
-        // signal early exit when we know the row is fully filled by this scanner
-        return xFrom == 0 && xTo == MAX_COORD;
+        row.set(xFrom, xTo+1, true);
     }
 
     private static Scanner parseScanner(String line)
@@ -111,6 +109,7 @@ public class Day152
 
         public Scanner(int x, int y, int beaconX, int beaconY)
         {
+
             this.x = x;
             this.y = y;
             this.beaconX = beaconX;
