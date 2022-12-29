@@ -1,9 +1,9 @@
 package de.hendriklipka.aoc2022.day24;
 
 import de.hendriklipka.aoc.AocParseUtils;
-import de.hendriklipka.aoc.bfs.BestFirstSearch;
-import de.hendriklipka.aoc.bfs.SearchState;
-import de.hendriklipka.aoc.bfs.SearchWorld;
+import de.hendriklipka.aoc.search.BestFirstSearch;
+import de.hendriklipka.aoc.search.SearchState;
+import de.hendriklipka.aoc.search.SearchWorld;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 

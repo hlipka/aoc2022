@@ -1,4 +1,4 @@
-package de.hendriklipka.aoc.bfs;
+package de.hendriklipka.aoc.search;
 
 /**
  * Base interface to track the current search state

@@ -1,13 +1,12 @@
-package de.hendriklipka.aoc.bfs;
+package de.hendriklipka.aoc.search;
 
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * User: hli
- * Date: 28.12.22
- * Time: 22:55
+ * Implements a best-first search
+ * using a given 'world' model and tracking search states
  */
 public class BestFirstSearch<W extends SearchWorld<S>,S extends SearchState>
 {
@@ -21,13 +20,11 @@ public class BestFirstSearch<W extends SearchWorld<S>,S extends SearchState>
     public void search()
     {
         PriorityQueue<S> moves = new PriorityQueue<>(100000, world.getComparator());
-        ConcurrentHashMap<String, String> memoize = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, String> memoize = new ConcurrentHashMap<>(100000);
 
         moves.add(world.getFirstState());
-        int count = 0;
         while (!moves.isEmpty())
         {
-            count++;
             S currentState = moves.poll();
 
             // when we reach the exit, store the current round if it is better than the best way so far
@@ -50,8 +47,6 @@ public class BestFirstSearch<W extends SearchWorld<S>,S extends SearchState>
 
             moves.addAll(newStates);
         }
-        System.out.println("states looked at: " + count);
-
     }
 
 }

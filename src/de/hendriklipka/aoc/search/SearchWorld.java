@@ -1,11 +1,11 @@
-package de.hendriklipka.aoc.bfs;
+package de.hendriklipka.aoc.search;
 
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * Implements a best-first search
- * using a given 'world' model and tracking search states
+ * Defines the 'world' / environment to do a search for a best result in.
+ * @param <S> the type for tracking the current search state
  */
 public interface SearchWorld<S extends SearchState>
 {
@@ -16,6 +16,8 @@ public interface SearchWorld<S extends SearchState>
 
     /**
      * From a given state, calculate which states can we access / reach next
+     * For a best-first search, these must be comparable by the comparator instance returned by 'getComparator()'.
+     * For a depth-first search, when no comparator is provided the order in the list is used for further search.
      */
     List<S> calculateNextStates(S currentState);
 
@@ -35,7 +37,7 @@ public interface SearchWorld<S extends SearchState>
      * (e.g. when this is 'distance to target', do
      * Integer.compare(state1.dist, state2.dist)
      * , and reverse when a higher value should go first)
-     *
+     * Must return an instance for best-first search, might be null for a depth-first search.
      */
     Comparator<S> getComparator();
 }
